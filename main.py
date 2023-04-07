@@ -14,9 +14,8 @@ cap.set(10, 150)
 
 mp4_files = [filename for filename in os.listdir(os.getcwd()) if filename.endswith('.mp4')]
 count_mp4_files = len(mp4_files)
-# Define the codec for the output video
-fourcc = cv2.VideoWriter_fourcc(*'mp4v') # change codec to mp4v
-out = cv2.VideoWriter(f'Video-{count_mp4_files}.mp4', fourcc, 20.0, (frameWidth, franeHeight)) # change file extension to .mp4
+fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+out = cv2.VideoWriter(f'Video-{count_mp4_files}.mp4', fourcc, 20.0, (frameWidth, franeHeight))
 
 count = 0
 
@@ -38,7 +37,6 @@ while True:
 
     cv2.imshow("Result", img)
 
-    # Write the frame to the output video file
     out.write(img)
 
     if cv2.waitKey(1) & 0xFF == ord('s'):
@@ -51,7 +49,6 @@ while True:
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-# Release the video file, output file, and close all windows
 cap.release()
 out.release()
 cv2.destroyAllWindows()

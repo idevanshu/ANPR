@@ -1,5 +1,4 @@
 import cv2
-import numpy as np
 import os
 import easyocr
 
@@ -12,6 +11,11 @@ cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 cap.set(3, frameWidth)
 cap.set(4, franeHeight)
 cap.set(10, 150)
+
+# Define the codec for the output video
+fourcc = cv2.VideoWriter_fourcc(*'mp4v') # change codec to mp4v
+out = cv2.VideoWriter('output.mp4', fourcc, 20.0, (frameWidth, franeHeight)) # change file extension to .mp4
+
 count = 0
 
 while True:
@@ -32,11 +36,20 @@ while True:
 
     cv2.imshow("Result", img)
 
+    # Write the frame to the output video file
+    out.write(img)
+
     if cv2.waitKey(1) & 0xFF == ord('s'):
         if result:
             cv2.imwrite(os.getcwd() + "\\" + str(count) + ".jpg", imgRoi)
             cv2.rectangle(img, (0, 200), (640, 300), (0, 255, 0), cv2.FILLED)
             cv2.putText(img, "Scan Saved", (15, 265), cv2.FONT_HERSHEY_COMPLEX, 2, (0, 0, 255), 2)
-            cv2.imshow("Result", img)
-            cv2.waitKey(500)
             count += 1
+
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+# Release the video file, output file, and close all windows
+cap.release()
+out.release()
+cv2.destroyAllWindows()

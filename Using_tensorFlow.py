@@ -1,22 +1,28 @@
 import cv2
 import os
-import easyocr
+import tensorflow as tf
+import numpy as np
 
-frameWidth = 640
+frameWidth = 680
 franeHeight = 480
+fps = 20.0
+
 plateCascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_russian_plate_number.xml")
 minArea = 500
-reader = easyocr.Reader(['en'])
-cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+
+# Load the pre-trained TensorFlow model
+model = tf.keras.models.load_model('path_to_model.h5')
+
+cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)
 cap.set(3, frameWidth)
 cap.set(4, franeHeight)
 cap.set(10, 150)
 
 mp4_files = [filename for filename in os.listdir(os.getcwd()) if filename.endswith('.mp4')]
-count_mp4_files = len(mp4_files)
-# Define the codec for the output video
-fourcc = cv2.VideoWriter_fourcc(*'mp4v') # change codec to mp4v
-out = cv2.VideoWriter(f'Video-{count_mp4_files}.mp4', fourcc, 20.0, (frameWidth, franeHeight)) # change file extension to .mp4
+file_name_count = len(mp4_files)
+
+fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+out = cv2.VideoWriter(f'Video-{file_name_count}.mp4', fourcc, fps, (frameWidth, franeHeight))
 
 count = 0
 
@@ -30,15 +36,18 @@ while True:
         if area > minArea:
             cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
             imgRoi = img[y:y + h, x:x + w]
-            result = reader.readtext(imgRoi)
-            if result:
-                plateNumber = result[0][1]
-                cv2.putText(img, plateNumber, (x, y - 5), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 0, 255), 2)
+            imgRoi = cv2.resize(imgRoi, (224, 224))  # Resize the image to match the input shape of the model
+            imgRoi = np.expand_dims(imgRoi, axis=0)  # Add a batch dimension
+            imgRoi = imgRoi / 255.0  # Normalize the image
+            result = model.predict(imgRoi)
+            plateNumber = result[0]  # The model outputs the license plate number directly
+
+            # Draw the license plate number on the image
+            cv2.putText(img, plateNumber, (x, y - 5), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 0, 255), 2)
             cv2.imshow("ROI", imgRoi)
 
     cv2.imshow("Result", img)
 
-    # Write the frame to the output video file
     out.write(img)
 
     if cv2.waitKey(1) & 0xFF == ord('s'):
@@ -51,7 +60,6 @@ while True:
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-# Release the video file, output file, and close all windows
 cap.release()
 out.release()
 cv2.destroyAllWindows()

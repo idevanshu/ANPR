@@ -2,39 +2,33 @@ import cv2
 import os
 import easyocr
 import numpy as np
-import time
 
-min_width=80
-min_height=80
-draw_color=(0,255,0)
-
-fps_limit=30
-speed_unit='km/h'
-pixel_to_meters_ratio=0.1
-distance_between_lines=3
-
+min_width = 80
+min_height = 80
+draw_color = (0, 255, 0)
+fps_limit = 30
+speed_unit = 'km/h'
+pixel_to_meters_ratio = 0.1
+distance_between_lines = 3
 
 cap = cv2.VideoCapture(0)
-frameWidth = 640
-franeHeight = 480
-plateCascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_russian_plate_number.xml")
-minArea = 500
+frame_width = 640
+frame_height = 480
+plate_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_russian_plate_number.xml")
+min_area = 500
 reader = easyocr.Reader(['en'])
-cap.set(3, frameWidth)
-cap.set(4, franeHeight)
+
+cap.set(3, frame_width)
+cap.set(4, frame_height)
 cap.set(10, 150)
 
-
 fgbg = cv2.createBackgroundSubtractorMOG2()
-
-old_center_list=[]
-vehicle_speeds=[]
-
-
+old_center_list = []
+vehicle_speeds = []
 mp4_files = [filename for filename in os.listdir(os.getcwd()) if filename.endswith('.mp4')]
 count_mp4_files = len(mp4_files)
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-out = cv2.VideoWriter(f'Video-{count_mp4_files}.mp4', fourcc, 20.0, (frameWidth, franeHeight))
+out = cv2.VideoWriter(f'Video-{count_mp4_files}.mp4', fourcc, 20.0, (frame_width, frame_height))
 
 count = 0
 
@@ -61,24 +55,24 @@ while True:
                 vehicle_speeds.append(speed)
                 if len(vehicle_speeds) > 1:
                     avg_speed = (vehicle_speeds[-1] + vehicle_speeds[-2]) / 2
-                    cv2.putText(frame, f"{avg_speed:.2f} {speed_unit}", (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 1,
-                                draw_color, 2)
+                    cv2.putText(frame, f"{avg_speed:.2f} {speed_unit}", (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 1, draw_color, 2)
             old_center_list.append(center)
 
     success, img = cap.read()
-    imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    numberPlates = plateCascade.detectMultiScale(imgGray, 1.1, 4)
+    img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    number_plates = plate_cascade.detectMultiScale(img_gray, 1.1, 4)
 
-    for (x, y, w, h) in numberPlates:
+    for (x, y, w, h) in number_plates:
         area = w * h
-        if area > minArea:
+        if area > min_area:
             cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
-            imgRoi = img[y:y + h, x:x + w]
-            result = reader.readtext(imgRoi)
+            img_roi = img[y:y + h, x:x + w]
+            result = reader.readtext(img_roi)
             if result:
                 plateNumber = result[0][1]
                 cv2.putText(img, plateNumber, (x, y - 5), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 0, 255), 2)
-            cv2.imshow("ROI", imgRoi)
+            cv2.imshow("ROI", img_roi)
+
 
     cv2.imshow("Result", img)
 
